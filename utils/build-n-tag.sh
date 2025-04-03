@@ -28,17 +28,13 @@ function main() {
 
       pipreqs --force --savepath "${service}/requirements.txt" "${service}"
       
-      docker pull ${docker_base}auguris/$app_group_name-$service_name:latest
-
       docker build \
-        --cache-from ${docker_base}auguris/$app_group_name-$service_name:latest \ 
         --build-arg PROJECT_PATH=$service \
+        --push \
         -t ${docker_base}auguris/$app_group_name-$service_name:latest \
         -t ${docker_base}auguris/$app_group_name-$service_name:$last_tag \
         -f infrastructure/docker/Dockerfile.python \
         .
-      docker push ${docker_base}auguris/$app_group_name-$service_name:latest
-      docker push ${docker_base}auguris/$app_group_name-$service_name:$last_tag
       rm "${service}/requirements.txt"
     done
   done
