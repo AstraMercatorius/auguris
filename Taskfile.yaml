@@ -1,5 +1,10 @@
 version: '3'
 
+includes:
+  fetcher:
+    taskfile: ./packages/market-data/ohlc-fetcher/Taskfile.yaml
+    dir: ./packages/market-data/ohlc-fetcher
+
 tasks:
   new:service:
     desc: "Create a new microservice inside packages/<app_group>/<microservice>"
