@@ -70,6 +70,6 @@ jobs:
           pip install pipreqs
       - name: Run build
         env:
-          DOCKER_URL_BASE: ghcr.io/astramerkatorius
+          DOCKER_URL_BASE: ghcr.io/astramercatorius
         run: |
           task build:all
