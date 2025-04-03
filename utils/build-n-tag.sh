@@ -31,8 +31,8 @@ function main() {
       docker build \
         --build-arg PROJECT_PATH=$service \
         --push \
-        -t ${docker_base}auguris/$app_group_name-$service_name:latest \
-        -t ${docker_base}auguris/$app_group_name-$service_name:$last_tag \
+        -t ${docker_base}$app_group_name-$service_name:latest \
+        -t ${docker_base}$app_group_name-$service_name:$last_tag \
         -f infrastructure/docker/Dockerfile.python \
         .
       rm "${service}/requirements.txt"
