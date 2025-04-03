@@ -31,6 +31,7 @@ jobs:
           git push origin --tags
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   Build:
     needs: [Tag-Creation]
     permissions:
@@ -45,24 +46,26 @@ jobs:
         with:
           version: 3.x
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-
+      - name: Install Python and pipreqs
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.5'
+        run: |
+          pip install pipreqs
       - name: Check out the repo
         uses: actions/checkout@v4
-      
       - name: Log in to Container Registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Check tags
         run: |
           git config user.name "Github Actions"
           git config user.email "github-actions@users.noreply.github.com"
           git fetch origin
           git tag -l
-
       - name: Run build
         env:
           DOCKER_URL_BASE: ghcr.io/astramerkatorius
