@@ -21,6 +21,7 @@ jobs:
         run: |
           git fetch origin
           git pull origin main
+          git log --pretty=format:"%H %s" --all -- "packages/market-data/ohlc-fetcher/"
           task tag:all
       - name: Push tags
         run: |
