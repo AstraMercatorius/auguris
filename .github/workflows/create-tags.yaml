@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Calculate tags
         run: |
-          task tag_microservices
+          task tag:all
       - name: Push tags
         run: |
           git config user.name "Github Actions"
@@ -63,4 +63,4 @@ jobs:
         env:
           DOCKER_URL_BASE: ghcr.io/astramerkatorius
         run: |
-          task build_for_deployment
+          task build:all
