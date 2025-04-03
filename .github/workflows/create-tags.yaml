@@ -46,12 +46,10 @@ jobs:
         with:
           version: 3.x
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Install Python and pipreqs
+      - name: Install Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12.5'
-        run: |
-          pip install pipreqs
       - name: Check out the repo
         uses: actions/checkout@v4
       - name: Log in to Container Registry
@@ -66,6 +64,9 @@ jobs:
           git config user.email "github-actions@users.noreply.github.com"
           git fetch origin
           git tag -l
+      - name: Install pipreqs
+        run: |
+          pip install pipreqs
       - name: Run build
         env:
           DOCKER_URL_BASE: ghcr.io/astramerkatorius
