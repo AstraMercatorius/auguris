@@ -1,0 +1,23 @@
+version: '3'
+
+tasks:
+  new:service:
+    desc: "Create a new microservice inside packages/<app_group>/<microservice>"
+    silent: true
+    vars:
+      APP_GROUP: "{{.CLI_ARGS | splitList \" \" | first}}"
+      SERVICE: "{{.CLI_ARGS | splitList \" \" | last}}"
+    cmds:
+      - bash ./utils/new-service.sh {{.APP_GROUP}} {{.SERVICE}}
+
+  build:all:
+    desc: "Build docker images for all latest tags available"
+    cmds:
+      - bash ./utils/build-n-tag.sh
+
+  tag:all:
+    desc: "Generate tags for each microservice based on conventional commits"
+    silent: false
+    internal: false
+    cmds:
+      - bash ./utils/tag-microservices.sh
