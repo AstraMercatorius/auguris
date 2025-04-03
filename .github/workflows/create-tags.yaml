@@ -21,6 +21,8 @@ jobs:
           fetch-depth: 0
       - name: Calculate tags
         run: |
+          git config user.name "Github Actions"
+          git config user.email "github-actions@users.noreply.github.com"
           task tag:all
       - name: Push tags
         run: |
