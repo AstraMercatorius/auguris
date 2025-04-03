@@ -1,0 +1,66 @@
+name: Create tags for packages
+run-name: Triggered by a ${{ github.event_name }} to ${{ github.ref }} with commit ${{ github.commit }}
+on:
+  push:
+    branches:
+      - main
+jobs:
+  Tag-Creation:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - name: Calculate tags
+        run: |
+          task tag_microservices
+      - name: Push tags
+        run: |
+          git config user.name "Github Actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git push origin --tags
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  Build:
+    needs: [Tag-Creation]
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      
+      - name: Log in to Container Registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check tags
+        run: |
+          git config user.name "Github Actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git fetch origin
+          git tag -l
+
+      - name: Run build
+        env:
+          DOCKER_URL_BASE: ghcr.io/astramerkatorius
+        run: |
+          task build_for_deployment
