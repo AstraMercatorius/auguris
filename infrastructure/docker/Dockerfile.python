@@ -1,23 +1,8 @@
 FROM python:3.12.5
 
 ARG PROJECT_PATH
-RUN apt update && apt install libstdc++6 -y
-# RUN apk add \
-#   --update \
-#   --no-cache \
-#   --virtual .tmp \
-#   gcc libc-dev linux-headers python3-dev make
 
-# RUN wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.31-src.tar.gz && \
-#   tar -xvzf ta-lib-0.4.31-src.tar.gz && \
-#   cd ta-lib/ && \
-#   ./configure --prefix=/usr --build=aarch64-unknown-linux-gnu && \
-#   make && \
-#   make install
-#
-# RUN pip install setuptools
-# RUN pip install TA-Lib -v --no-build-isolation
-# RUN rm -R ta-lib ta-lib-0.4.31-src.tar.gz
+RUN apt update && apt install libstdc++6 -y && apt clean
 RUN wget https://github.com/TA-Lib/ta-lib/releases/download/v0.6.3/ta-lib-0.6.3-src.tar.gz
 RUN tar -xvf ta-lib-0.6.3-src.tar.gz
 WORKDIR /ta-lib-0.6.3
@@ -27,9 +12,6 @@ RUN make install
 RUN pip install --no-cache-dir TA-Lib
 
 WORKDIR /app
-# RUN apk update \
-#   && apk add python3-dev gcc libc-dev \
-#   && rm -rf /var/cache/apk/*
 
 COPY ${PROJECT_PATH}/requirements.txt .
 
