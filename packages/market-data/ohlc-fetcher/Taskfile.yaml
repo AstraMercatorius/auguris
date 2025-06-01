@@ -1,7 +1,17 @@
 version: '3'
 
+env:
+  CRON_SECONDS: 15
+  PAIRS: "BTC/USD,ETH/USD"
+  NATS_URL: "nats://localhost:4222"
+  NATS_SUBJECT: "market-data.raw"
+
 tasks:
   run:
     desc: "Run the microservice"
     cmds:
       - python src/main.py
+  test:
+    desc: "Run tests for ohlc-fetcher"
+    cmds:
+      - PYTHONPATH=src pytest --log-cli-level=info --cov-report=term --cov-report=html --cov-report=lcov --cov=./src ./tests
