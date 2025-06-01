@@ -7,6 +7,9 @@ includes:
   mock-server:
     taskfile: ./packages/mock-server/Taskfile.yaml
     dir: ./packages/mock-server
+  feature-engineering:
+    taskfile: ./packages/market-data/feature-engineering/Taskfile.yaml
+    dir: ./packages/market-data/feature-engineering
 
 tasks:
   run:bdd:

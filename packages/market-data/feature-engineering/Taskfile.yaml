@@ -1,0 +1,12 @@
+version: '3'
+
+tasks:
+  run:
+    desc: "Run the microservice"
+    cmds:
+      - python src/main.py
+  
+  test:
+    desc: "Run tests"
+    cmds:
+      - PYTHONPATH=src pytest --log-cli-level=info --cov-report=term --cov-report=html --cov-report=lcov --cov=./src ./tests
