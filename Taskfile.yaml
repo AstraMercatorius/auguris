@@ -4,8 +4,21 @@ includes:
   fetcher:
     taskfile: ./packages/market-data/ohlc-fetcher/Taskfile.yaml
     dir: ./packages/market-data/ohlc-fetcher
+  mock-server:
+    taskfile: ./packages/mock-server/Taskfile.yaml
+    dir: ./packages/mock-server
+  feature-engineering:
+    taskfile: ./packages/market-data/feature-engineering/Taskfile.yaml
+    dir: ./packages/market-data/feature-engineering
 
 tasks:
+  run:bdd:
+    desc: "Run feature tests"
+    silent: true
+    cmds:
+      - task mock-server:run
+      - nats-server --jetstream
+
   new:service:
     desc: "Create a new microservice inside packages/<app_group>/<microservice>"
     silent: true

@@ -1,0 +1,7 @@
+version: '3'
+
+tasks:
+  run:
+    desc: "Run the mock server"
+    cmds:
+      - python src/main.py

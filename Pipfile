@@ -8,6 +8,17 @@ fastapi = "*"
 asyncio = "*"
 uvicorn = "*"
 pipreqs = "*"
+schedule = "*"
+httpx = "*"
+pytest-cov = "*"
+pytest-asyncio = "*"
+nats-py = "*"
+pandas = "*"
+numpy = "*"
+ta-lib = "*"
+events = "*"
+behave = "*"
+flask = "*"
 
 [dev-packages]
 
