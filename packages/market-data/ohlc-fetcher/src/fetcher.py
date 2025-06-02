@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
 import logging
+import os
 from typing import List
 import httpx
 
 logger = logging.getLogger(__name__)
 
 async def get_ohlc(pair: str) -> List:
-    base_url = "https://api.kraken.com"
+    base_url =  os.getenv("KRAKEN_URL", "https://api.kraken.com")
     interval = 15
     since = int((datetime.today() - timedelta(minutes=interval * 100)).timestamp())
     api_path = "0/public/OHLC"

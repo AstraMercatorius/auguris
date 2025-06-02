@@ -11,13 +11,37 @@ includes:
     taskfile: ./packages/market-data/feature-engineering/Taskfile.yaml
     dir: ./packages/market-data/feature-engineering
 
+dotenv:
+  - '.env'
+
 tasks:
-  run:bdd:
-    desc: "Run feature tests"
+  run:nats-server:
+    desc: "Run NATS Server"
     silent: true
     cmds:
-      - task mock-server:run
       - nats-server --jetstream
+  
+  run:project:
+    desc: "Run all microservices directly"
+    silent: true
+    env:
+      KRAKEN_URL: http://localhost:8000
+    deps:
+      - fetcher:run
+      - feature-engineering:run
+
+  run:local-dependencies:
+    desc: "Run test dependencies"
+    silent: true
+    deps:
+      - run:nats-server
+      - mock-server:run
+  
+  run:bdd:
+    desc: "Run behave BDD tests"
+    silent: true
+    cmds:
+      - behave -x
 
   new:service:
     desc: "Create a new microservice inside packages/<app_group>/<microservice>"
