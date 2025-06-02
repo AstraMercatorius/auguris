@@ -18,6 +18,5 @@ async def get_ohlc(pair: str) -> List:
         response = await client.get(url)
         logger.info(f"Got response: {response}")
         raw_data = response.json()
-        logger.info(f"Raw data: {raw_data}")
         result = raw_data['result'][pair]
         return result
