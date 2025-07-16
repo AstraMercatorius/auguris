@@ -19,6 +19,10 @@ ta-lib = "*"
 events = "*"
 behave = "*"
 flask = "*"
+keras = "*"
+"keras.models" = "*"
+tensorflow = "*"
+watchdog = "*"
 
 [dev-packages]
 

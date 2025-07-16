@@ -1,6 +1,9 @@
 version: '3'
 
 includes:
+  prediction-engine:
+    taskfile: ./packages/prediction/engine/Taskfile.yaml
+    dir: ./packages/prediction/engine
   fetcher:
     taskfile: ./packages/market-data/ohlc-fetcher/Taskfile.yaml
     dir: ./packages/market-data/ohlc-fetcher
@@ -29,6 +32,7 @@ tasks:
     deps:
       - fetcher:run
       - feature-engineering:run
+      - prediction-engine:run
 
   run:local-dependencies:
     desc: "Run test dependencies"

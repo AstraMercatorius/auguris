@@ -1,0 +1,17 @@
+version: '3'
+
+tasks:
+  run:
+    desc: "Run the microservice"
+    cmds:
+      - python src/main.py
+
+  dev:
+    desc: "Auto-restart dev mode"
+    cmds:
+      - |
+        watchmedo auto-restart \
+          --directory=src \
+          --pattern="*.py" \
+          --recursive \
+          -- python src/main.py
