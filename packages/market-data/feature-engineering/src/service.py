@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import traceback
 from nats.aio.client import Client
 from nats.js import JetStreamContext
 from nats.js.api import AckPolicy, ConsumerConfig, DeliverPolicy
