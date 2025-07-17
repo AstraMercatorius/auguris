@@ -44,16 +44,21 @@ for app_group in packages/*; do
         while IFS= read -r line; do
             commit_hash=$(echo "$line" | awk '{print $1}')
             commit_msg=$(echo "$line" | cut -d' ' -f2-)
-
+            
+            echo "[DEBUG]: commit_msg=$commit_msg"
             if [[ "$commit_msg" =~ ^(feat|fix)(\(.+\))?! ]]; then
                 major=true
+                echo "[DEBUG]: major=$major"
             elif [[ "$commit_msg" =~ ^feat ]]; then
                 minor=true
+                echo "[DEBUG]: minor=$minor"
             elif [[ "$commit_msg" =~ ^fix ]]; then
                 patch=true
+                echo "[DEBUG]: patch=$patch"
             fi
 
             commit_body=$(git show -s --format=%b "$commit_hash")
+            echo "[DEBUG]: commit_body=$commit_body"
             if echo "$commit_body" | grep -q "BREAKING CHANGE:"; then
                 major=true
             fi
@@ -67,7 +72,9 @@ for app_group in packages/*; do
         if [ -z "$last_tag" ]; then
             new_version="v0.1.0"
         else
+          echo "[DEBUG]: Calculating next version"
             current_version=$(echo "$last_tag" | sed -E "s|${app_group_name}-${service_name}/v||")
+            echo "[DEBUG]: current_version=$current_version"
             IFS='.' read -r major_v minor_v patch_v <<< "$current_version"
 
             if $major; then
@@ -82,6 +89,7 @@ for app_group in packages/*; do
             fi
 
             new_version="v${major_v}.${minor_v}.${patch_v}"
+            echo "[DEBUG]: new_version=$new_version"
         fi
 
         new_tag="${app_group_name}-${service_name}/${new_version}"
