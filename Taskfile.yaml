@@ -8,7 +8,7 @@ includes:
     taskfile: ./packages/market-data/ohlc-fetcher/Taskfile.yaml
     dir: ./packages/market-data/ohlc-fetcher
   mock-server:
-    taskfile: ./packages/mock-server/Taskfile.yaml
+    taskfile: ./packages/mocking/mock-server/Taskfile.yaml
     dir: ./packages/mock-server
   feature-engineering:
     taskfile: ./packages/market-data/feature-engineering/Taskfile.yaml
