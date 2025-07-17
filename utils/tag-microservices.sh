@@ -25,6 +25,7 @@ for app_group in packages/*; do
             echo "🆕 No previous tag found for $app_group_name/$service_name. Starting from first commit..."
             commit_range="--all"
         else
+            echo "🏷️ Last tag: $last_tag"
             commit_range="${last_tag}..HEAD"
         fi
 
@@ -33,6 +34,8 @@ for app_group in packages/*; do
             echo "⚠️  No new commits for $app_group_name/$service_name. Skipping version bump."
             continue
         fi
+
+        echo "📝 Commits found. Calculating next version number..."
 
         major=false
         minor=false
