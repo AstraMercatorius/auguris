@@ -1,114 +1,189 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -Eeuo pipefail
 
-readonly tmp="/tmp/auguris"
+# -----------------------------------------------------------------------------
+# Configuration
+# -----------------------------------------------------------------------------
+readonly TMP_DIR="/tmp/auguris"
 
-rm -Rf $tmp && mkdir -p $tmp
+# -----------------------------------------------------------------------------
+# Logging helpers
+# -----------------------------------------------------------------------------
+log()   { echo -e "$@"; }
+debug() {
+  if [[ "${DEBUG:-false}" == "true" ]]; then
+    echo "[DEBUG] $@"
+  fi
+  return 0
+}
 
+# -----------------------------------------------------------------------------
+# Version parsing & bumping
+# -----------------------------------------------------------------------------
+sanitize_version() {
+  # Strip CR, LF, spaces
+  echo "$1" | tr -d '\r\n[:space:]'
+}
 
-for app_group in packages/*; do
-    [ -d "$app_group" ] || continue
+parse_version() {
+  # Splits $1 into v_major, v_minor, v_patch
+  IFS='.' read -r v_major v_minor v_patch <<< "$1"
+  v_major=${v_major:-0}
+  v_minor=${v_minor:-0}
+  v_patch=${v_patch:-0}
+  # Force base-10 numeric
+  v_major=$((10#$v_major))
+  v_minor=$((10#$v_minor))
+  v_patch=$((10#$v_patch))
+  debug "Parsed version → ${v_major}.${v_minor}.${v_patch}"
+}
 
+bump_version() {
+  # Uses global v_major, v_minor, v_patch and flags MAJOR, MINOR, PATCH
+  if   $MAJOR; then ((v_major++)); v_minor=0; v_patch=0
+  elif $MINOR; then ((v_minor++)); v_patch=0
+  elif $PATCH; then ((v_patch++))
+  fi
+  printf "v%d.%d.%d" "$v_major" "$v_minor" "$v_patch"
+}
+
+# -----------------------------------------------------------------------------
+# Git/tag helpers
+# -----------------------------------------------------------------------------
+get_last_tag() {
+  local pattern=$1
+  git tag --list "$pattern" | sort -V | tail -n1 || true
+}
+
+get_commit_range() {
+  local last_tag=$1
+  [[ -z "$last_tag" ]] && echo "--all" || echo "${last_tag}..HEAD"
+}
+
+collect_commits() {
+  # $1 = range, $2 = path
+  git log --pretty=format:"%H %s" "$1" -- "$2" || true
+}
+
+determine_bump_flags() {
+  # $1 = all commits as lines
+  MAJOR=false; MINOR=false; PATCH=false
+  while IFS= read -r line; do
+    local hash=${line%% *}
+    local msg=${line#* }
+    debug "Commit message: $msg"
+    if [[ "$msg" =~ ^(feat|fix)(\(.+\))?! ]]; then
+      MAJOR=true
+    elif [[ "$msg" =~ ^feat ]]; then
+      MINOR=true
+    elif [[ "$msg" =~ ^fix ]]; then
+      PATCH=true
+    fi
+    # check body for BREAKING CHANGE:
+    if git show -s --format=%b "$hash" | grep -q "BREAKING CHANGE:"; then
+      MAJOR=true
+    fi
+  done <<< "$1"
+}
+
+# -----------------------------------------------------------------------------
+# Changelog generation
+# -----------------------------------------------------------------------------
+update_changelog() {
+  local service_dir=$1
+  local version=$2
+  local commits=$3
+  local changelog="$service_dir/CHANGELOG.md"
+
+  mkdir -p "$(dirname "$changelog")"
+  echo -e "## ${version}\n" >> "$changelog"
+
+  while IFS= read -r line; do
+    local h=${line%% *}
+    local m=${line#* }
+    printf "- %s (%s)\n" "$m" "${h:0:7}" >> "$changelog"
+  done <<< "$commits"
+}
+
+# -----------------------------------------------------------------------------
+# Process one service
+# -----------------------------------------------------------------------------
+process_service() {
+  local app_group=$1
+  local service=$2
+
+  local agn=$(basename "$app_group")
+  local sn=$(basename "$service")
+  local tag_pattern="${agn}-${sn}/v*"
+  local svc_path="packages/${agn}/${sn}"
+
+  log "====================================================================="
+  log "🔍 Processing ${agn}/${sn}"
+
+  # 1) Find last tag
+  local last_tag
+  last_tag=$(get_last_tag "$tag_pattern")
+  log "🏷️ Last tag: ${last_tag:-<none>}"
+
+  # 2) Collect commits
+  local range commits
+  range=$(get_commit_range "$last_tag")
+  debug "Commit range: $range"
+  commits=$(collect_commits "$range" "$svc_path")
+  if [[ -z "$commits" ]]; then
+    log "⚠️  No new commits — skipping."
+    return
+  fi
+
+  # 3) Determine bump flags
+  log "📝 Found commits; analyzing for bump type…"
+  determine_bump_flags "$commits"
+  if ! $MAJOR && ! $MINOR && ! $PATCH; then
+    log "⚠️  No feat:/fix:/BREAKING CHANGE — skipping."
+    return
+  fi
+
+  # 4) Calculate new version
+  local new_version
+  if [[ -z "$last_tag" ]]; then
+    new_version="v0.1.0"
+  else
+    local raw=${last_tag#${agn}-${sn}/v}
+    raw=$(sanitize_version "$raw")
+    debug "Raw version: [$raw]"
+    parse_version "$raw"
+    new_version=$(bump_version)
+  fi
+
+  # 5) Tag it
+  local new_tag="${agn}-${sn}/${new_version}"
+  git tag "$new_tag"
+  log "✅ Created new tag: $new_tag"
+
+  # 6) Update changelog & commit
+  update_changelog "$svc_path" "$new_version" "$commits"
+  git add "$svc_path/CHANGELOG.md"
+  git commit -m "docs: update changelog for ${new_version}"
+
+  log "🚀 Version bump completed for ${agn}/${sn}!"
+}
+
+# -----------------------------------------------------------------------------
+# Entry point
+# -----------------------------------------------------------------------------
+main() {
+  # prepare temp dir
+  rm -rf "$TMP_DIR"
+  mkdir -p "$TMP_DIR"
+
+  # loop groups & services
+  for app_group in packages/*; do
+    [[ -d "$app_group" ]] || continue
     for service in "$app_group"/*; do
-        [ -d "$service" ] || continue
-
-        app_group_name=$(basename "$app_group")
-        service_name=$(basename "$service")
-
-        echo "🔍 Processing: $app_group_name/$service_name"
-
-        tag_pattern="${app_group_name}-${service_name}/v*"
-
-        last_tag=$(git tag --list "$tag_pattern" | sort -V | tail -n 1)
-
-        if [ -z "$last_tag" ]; then
-            echo "🆕 No previous tag found for $app_group_name/$service_name. Starting from first commit..."
-            commit_range="--all"
-        else
-            echo "🏷️ Last tag: $last_tag"
-            commit_range="${last_tag}..HEAD"
-        fi
-
-        commits=$(git log --pretty=format:"%H %s" $commit_range -- "packages/$app_group_name/$service_name/")
-        if [ -z "$commits" ]; then
-            echo "⚠️  No new commits for $app_group_name/$service_name. Skipping version bump."
-            continue
-        fi
-
-        echo "📝 Commits found. Calculating next version number..."
-
-        major=false
-        minor=false
-        patch=false
-
-        while IFS= read -r line; do
-            commit_hash=$(echo "$line" | awk '{print $1}')
-            commit_msg=$(echo "$line" | cut -d' ' -f2-)
-            
-            echo "[DEBUG]: commit_msg=$commit_msg"
-            if [[ "$commit_msg" =~ ^(feat|fix)(\(.+\))?! ]]; then
-                major=true
-                echo "[DEBUG]: major=$major"
-            elif [[ "$commit_msg" =~ ^feat ]]; then
-                minor=true
-                echo "[DEBUG]: minor=$minor"
-            elif [[ "$commit_msg" =~ ^fix ]]; then
-                patch=true
-                echo "[DEBUG]: patch=$patch"
-            fi
-
-            commit_body=$(git show -s --format=%b "$commit_hash")
-            echo "[DEBUG]: commit_body=$commit_body"
-            if echo "$commit_body" | grep -q "BREAKING CHANGE:"; then
-                major=true
-            fi
-        done <<< "$commits"
-
-        if ! $major && ! $minor && ! $patch; then
-            echo "⚠️  No fix:, feat:, or BREAKING CHANGE commits. Skipping version bump for $app_group_name/$service_name."
-            continue
-        fi
-
-        if [ -z "$last_tag" ]; then
-            new_version="v0.1.0"
-        else
-          echo "[DEBUG]: Calculating next version"
-            current_version=$(echo "$last_tag" | sed -E "s|${app_group_name}-${service_name}/v||")
-            echo "[DEBUG]: current_version=$current_version"
-            IFS='.' read -r major_v minor_v patch_v <<< "$current_version"
-
-            if $major; then
-                ((major_v++))
-                minor_v=0
-                patch_v=0
-            elif $minor; then
-                ((minor_v++))
-                patch_v=0
-            elif $patch; then
-                ((patch_v++))
-            fi
-
-            new_version="v${major_v}.${minor_v}.${patch_v}"
-            echo "[DEBUG]: new_version=$new_version"
-        fi
-
-        new_tag="${app_group_name}-${service_name}/${new_version}"
-        git tag "$new_tag"
-        echo "✅ Created new tag: $new_tag"
-
-        mkdir -p "$tmp/$service"
-        changelog_file="$service/CHANGELOG.md"
-        echo -e "## ${new_version}\n" >> "$changelog_file"
-
-        while IFS= read -r line; do
-            commit_hash=$(echo "$line" | awk '{print $1}')
-            commit_msg=$(echo "$line" | cut -d' ' -f2-)
-            echo "- ${commit_msg} (${commit_hash:0:7})" >> "$changelog_file"
-        done <<< "$commits"
-
-        git add "$changelog_file"
-        git commit -m "docs: update changelog for ${new_version}"
-
-        echo "🚀 Version bump completed for $app_group_name/$service_name!"
+      [[ -d "$service" ]] || continue
+      process_service "$app_group" "$service"
     done
-done
+  done
+}
+
+main "$@"
