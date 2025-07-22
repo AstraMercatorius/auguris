@@ -101,7 +101,7 @@ update_changelog() {
   while IFS= read -r line; do
     local h=${line%% *}
     local m=${line#* }
-    printf "- %s (%s)\n" "$m" "${h:0:7}" >> "$changelog"
+    echo "- ${m} (${h:0:7})" >> "$changelog"
   done <<< "$commits"
 }
 
