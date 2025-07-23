@@ -92,4 +92,4 @@ jobs:
         env:
           DOCKER_URL_BASE: ghcr.io/astramercatorius
         run: |
-          task build:all
+          task build
