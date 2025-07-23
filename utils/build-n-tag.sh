@@ -27,6 +27,7 @@ function main() {
       echo "🪚 Building image for $last_tag"
 
       pipreqs --force --savepath "${service}/requirements.txt" "${service}"
+      cat "${service}/requirements.txt"
       
       docker build \
         --build-arg PROJECT_PATH=$service \
