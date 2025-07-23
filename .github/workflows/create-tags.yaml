@@ -67,10 +67,13 @@ jobs:
           git tag -l
       - name: Prepare C-lib dependencies
         run: |
-          wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
-          tar xzf ta-lib-0.4.0-src.tar.gz && cd ta-lib
-          ./configure --prefix=/usr/local
-          make -j"$(nproc)" && sudo make install && sudo ldconfig
+          cd /tmp
+          wget https://github.com/TA-Lib/ta-lib/releases/download/v0.6.3/ta-lib-0.6.3-src.tar.gz
+          tar -xvf ta-lib-0.6.3-src.tar.gz && cd ta-lib
+          ./configure --prefix=/usr --build=`/bin/arch`-unknown-linux-gnu
+          make
+          sudo make install
+          sudo ldconfig
       - name: Export TA-Lib paths
         run: |
           export TA_LIBRARY_PATH="/usr/local/lib"
