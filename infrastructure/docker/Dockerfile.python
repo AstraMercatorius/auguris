@@ -1,15 +1,6 @@
-FROM python:3.12.5
+FROM danazkari/python-talib:3.12.5
 
 ARG PROJECT_PATH
-
-RUN apt update && apt install libstdc++6 -y && apt clean
-RUN wget https://github.com/TA-Lib/ta-lib/releases/download/v0.6.3/ta-lib-0.6.3-src.tar.gz
-RUN tar -xvf ta-lib-0.6.3-src.tar.gz
-WORKDIR /ta-lib-0.6.3
-RUN ./configure --prefix=/usr --build=`/bin/arch`-unknown-linux-gnu
-RUN make
-RUN make install
-RUN pip install --no-cache-dir TA-Lib
 
 WORKDIR /app
 
