@@ -65,9 +65,12 @@ jobs:
           git config user.name "Github Actions"
           git config user.email "github-actions@users.noreply.github.com"
           git tag -l
-      - name: Install pipreqs
+      - name: Install pipenv
         run: |
-          pip install pipreqs
+          pip install pipenv
+      - name: Install dependencies
+        run: |
+          pipenv install --dev
       - name: Run build
         env:
           DOCKER_URL_BASE: ghcr.io/astramercatorius
