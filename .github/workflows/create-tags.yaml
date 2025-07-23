@@ -68,7 +68,7 @@ jobs:
       - name: Prepare C-lib dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libta-lib-dev
+          sudo apt-get install -y libta-lib0-dev
       - name: Install pipenv
         run: |
           pip install pipenv
