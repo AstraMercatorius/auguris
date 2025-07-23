@@ -67,8 +67,18 @@ jobs:
           git tag -l
       - name: Prepare C-lib dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libta-lib0-dev
+          wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
+          tar xzf ta-lib-0.4.0-src.tar.gz && cd ta-lib
+          ./configure --prefix=/usr/local
+          make -j"$(nproc)" && sudo make install && sudo ldconfig
+      - name: Export TA-Lib paths
+        run: |
+          export TA_LIBRARY_PATH="/usr/local/lib"
+          export TA_INCLUDE_PATH="/usr/local/include"
+          export LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH:-}"
+          echo "TA_LIBRARY_PATH=$TA_LIBRARY_PATH" >> $GITHUB_ENV
+          echo "TA_INCLUDE_PATH=$TA_INCLUDE_PATH" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
       - name: Install pipenv
         run: |
           pip install pipenv
