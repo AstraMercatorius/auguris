@@ -67,12 +67,8 @@ jobs:
           git tag -l
       - name: Prepare C-lib dependencies
         run: |
-          wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
-          tar -xzf ta-lib-0.4.0-src.tar.gz
-          cd ta-lib/
-          ./configure --prefix=/usr
-          make
-          sudo make install
+          sudo apt-get update
+          sudo apt-get install -y libdata-lib0-dev
       - name: Install pipenv
         run: |
           pip install pipenv
