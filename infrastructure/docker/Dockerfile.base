@@ -1,11 +1,175 @@
-FROM python:3.12.5
+FROM ubuntu:latest
 
-RUN apt update && apt install libstdc++6 -y && apt clean \
-  && wget https://github.com/TA-Lib/ta-lib/releases/download/v0.6.3/ta-lib-0.6.3-src.tar.gz \
-  && tar -xvf ta-lib-0.6.3-src.tar.gz && cd /ta-lib-0.6.3 \
-  && ./configure --prefix=/usr --build=`/bin/arch`-unknown-linux-gnu \
-  && make && make install \
-  && pip install --no-cache-dir TA-Lib \
-  && cd / && rm -Rf /ta-lib-0.6.3
+# Avoid interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
 
-ENTRYPOINT [ "bash" ]
+# Set up locale
+RUN apt-get update && apt-get install -y locales \
+    && locale-gen en_US.UTF-8 \
+    && update-locale LANG=en_US.UTF-8
+
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+
+# Install essential system packages and build tools
+RUN apt-get update && apt-get install -y \
+    # Basic system tools
+    curl \
+    wget \
+    unzip \
+    zip \
+    tar \
+    gzip \
+    git \
+    ca-certificates \
+    gnupg \
+    lsb-release \
+    software-properties-common \
+    # Build essentials for TA-Lib and Python packages
+    build-essential \
+    libstdc++6 \
+    gcc \
+    g++ \
+    make \
+    cmake \
+    autoconf \
+    automake \
+    libtool \
+    pkg-config \
+    # Python build dependencies
+    libffi-dev \
+    libssl-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libncursesw5-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    tk-dev \
+    llvm \
+    xz-utils \
+    zlib1g-dev \
+    # Additional utilities commonly needed in CI
+    jq \
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Docker
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null \
+    && apt-get update \
+    && apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js (required by many GitHub Actions)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
+
+# Install Python (multiple versions for compatibility)
+RUN add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update \
+    && apt-get install -y \
+        python3.9 \
+        python3.9-dev \
+        python3.9-distutils \
+        python3.10 \
+        python3.10-dev \
+        python3.10-distutils \
+        python3.11 \
+        python3.11-dev \
+        python3.11-distutils \
+        python3.12 \
+        python3.12-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Python 3.10 as default
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 \
+    && update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
+
+# Install pip for all Python versions
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.9 \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10 \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
+# Install TA-Lib C library
+WORKDIR /tmp
+RUN wget https://github.com/TA-Lib/ta-lib/releases/download/v0.6.3/ta-lib-0.6.3-src.tar.gz \
+    && tar -xvf ta-lib-0.6.3-src.tar.gz \
+    && cd ta-lib-0.6.3 \
+    && ./configure --prefix=/usr --build=`/bin/arch`-unknown-linux-gnu \
+    && make \
+    && make install \
+    && ldconfig \
+    && cd / \
+    && rm -rf /tmp/ta-lib*
+
+# Install common Python packages globally
+RUN python3 -m pip install --upgrade pip setuptools wheel \
+    && python3 -m pip install \
+        pipenv \
+        virtualenv \
+        tox \
+        pytest \
+        flake8 \
+        black \
+        isort \
+        mypy \
+        coverage \
+        pipreqs \
+        # Pre-install TA-Lib Python package to verify C library works
+        TA-Lib
+
+# Install GitHub CLI (useful for CI operations)
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+    && apt-get update \
+    && apt-get install -y gh \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a user for running actions (similar to GitHub Actions runner)
+RUN useradd -m -s /bin/bash runner \
+    && usermod -aG docker runner \
+    && usermod -aG sudo runner \
+    && echo 'runner ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+# Set up directories commonly used in GitHub Actions
+RUN mkdir -p /home/runner/work \
+    && mkdir -p /github/workspace \
+    && mkdir -p /github/home \
+    && chown -R runner:runner /home/runner \
+    && chown -R runner:runner /github
+
+# Switch to runner user
+USER runner
+WORKDIR /home/runner
+
+# Install Python packages for the runner user as well
+RUN python3 -m pip install --user --upgrade pip setuptools wheel pipenv
+
+# Set environment variables commonly used in GitHub Actions
+ENV RUNNER_USER=runner
+ENV GITHUB_WORKSPACE=/github/workspace
+ENV GITHUB_ACTIONS=true
+ENV CI=true
+
+# Add user pip binaries to PATH
+ENV PATH="/home/runner/.local/bin:$PATH"
+
+# Verify installations
+RUN python3 --version \
+    && pip --version \
+    && pipenv --version \
+    && docker --version \
+    && git --version \
+    && node --version \
+    && npm --version \
+    && gh --version \
+    && python3 -c "import talib; print('TA-Lib installed successfully')"
+
+# Set default working directory
+WORKDIR /github/workspace
+
+# Default command
+CMD ["/bin/bash"]
