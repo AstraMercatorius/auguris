@@ -29,7 +29,7 @@ function build() {
     -t ${docker_base}auguris/$app_group-$service_name:$last_tag \
     -f infrastructure/docker/Dockerfile.python \
     .
-  rm "${service}/requirements.txt"
+  rm -r "${service}/requirements.txt"
 
   return 0
 }
