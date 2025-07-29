@@ -56,6 +56,10 @@ tasks:
     cmds:
       - bash ./utils/new-service.sh {{.APP_GROUP}} {{.SERVICE}}
 
+  build:service:
+    cmds:
+      - ./utils/build-n-tag.sh {{.APP_GROUP}} {{.SERVICE_NAME}}
+
   build:
     desc: "Runs new build process"
     deps:
