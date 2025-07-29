@@ -57,7 +57,8 @@ function build_service() {
   cat "${service_path}/requirements.txt"
   
   # Build and push Docker image
-  if docker build \
+  if docker buildx build \
+    --platform linux/amd64,linux/arm64 \
     --build-arg PROJECT_PATH=$service_path \
     --push \
     -t ${docker_base}auguris/$app_group-$service_name:latest \
