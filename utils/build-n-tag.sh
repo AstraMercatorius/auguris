@@ -22,7 +22,7 @@ function build() {
   pipenv run pipreqs --force --savepath "${project_path}/requirements.txt" "${project_path}"
   cat "${project_path}/requirements.txt"
 
-  docker build \
+  docker buildx build \
     --build-arg PROJECT_PATH=$project_path \
     --push \
     -t ${docker_base}auguris/$app_group-$service_name:latest \
