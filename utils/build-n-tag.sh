@@ -23,6 +23,7 @@ function build() {
   cat "${project_path}/requirements.txt"
 
   docker buildx build \
+    --platform linux/amd64,linux/arm64 \
     --build-arg PROJECT_PATH=$project_path \
     --push \
     -t ${docker_base}auguris/$app_group-$service_name:latest \
