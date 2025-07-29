@@ -50,6 +50,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      
+      # Add Docker Buildx setup for cross-platform builds
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+      
+      # Enable QEMU for cross-platform emulation
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+      
       - name: Log in to Container Registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:
@@ -63,7 +76,7 @@ jobs:
           git tag -l
       - name: Prepare C-lib dependencies
         run: |
-          apt update && sudo apt install build-essential libstdc++6 -y && apt clean
+          apt update && apt install build-essential libstdc++6 -y && apt clean
           cd /tmp
           wget https://github.com/TA-Lib/ta-lib/releases/download/v0.6.3/ta-lib-0.6.3-src.tar.gz
           tar -xvf ta-lib-0.6.3-src.tar.gz && cd ta-lib-0.6.3
