@@ -3,12 +3,16 @@ from fastapi import FastAPI
 import uvicorn
 
 PORT = int(os.getenv("PORT", 5500))
+PAIRS = os.getenv("PAIRS")
 
 app = FastAPI()
 
 @app.get("/healthz")
 async def healthz():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "pairs": PAIRS
+    }
 
 def get_webserver():
     return uvicorn.Server(
