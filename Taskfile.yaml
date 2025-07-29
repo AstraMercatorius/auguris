@@ -56,29 +56,21 @@ tasks:
     cmds:
       - bash ./utils/new-service.sh {{.APP_GROUP}} {{.SERVICE}}
 
-  build:all:
-    desc: "Build docker images for all latest tags available"
-    env:
-      DOCKER_URL_BASE: ghcr.io/astramercatorius
-    cmds:
-      - bash ./utils/build-n-tag.sh
-
-  build:service:
-    cmds:
-      - ./utils/build.sh {{.SERVICE_NAME}}
-
   build:
     desc: "Runs new build process"
     deps:
       - task: build:service
         vars:
-          SERVICE_NAME: market-data/feature-engineering
+          APP_GROUP: market-data
+          SERVICE_NAME: feature-engineering
       - task: build:service
         vars:
-          SERVICE_NAME: market-data/ohlc-fetcher
+          APP_GROUP: market-data
+          SERVICE_NAME: ohlc-fetcher
       - task: build:service
         vars:
-          SERVICE_NAME: prediction/engine
+          APP_GROUP: prediction
+          SERVICE_NAME: engine
 
   tag:all:
     desc: "Generate tags for each microservice based on conventional commits"
