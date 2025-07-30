@@ -21,6 +21,7 @@ class Crontask(metaclass=SingletonMeta):
     def __init__(self) -> None:
         self._running = False
         self._interval = int(os.getenv("CRON_SECONDS", 900))
+        logger.info(f"Interval configured to {self._interval} seconds")
         self._subscribers: List[Callable[[], Awaitable[Any]]] = []
 
     def subscribe(self, listener: Callable[[], Awaitable[Any]]):
