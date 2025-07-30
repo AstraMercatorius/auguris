@@ -24,6 +24,7 @@ function build() {
 
   docker build \
     --build-arg PROJECT_PATH=$project_path \
+    --platform=linux/amd64 \
     --push \
     -t ${docker_base}auguris/$app_group-$service_name:latest \
     -t ${docker_base}auguris/$app_group-$service_name:$last_tag \
