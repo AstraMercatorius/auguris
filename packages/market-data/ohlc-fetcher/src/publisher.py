@@ -23,6 +23,7 @@ class Publisher:
     async def _connect_nats(self):
         self._nc = await nats.connect(servers=[self._nats_url])
         self._js = self._nc.jetstream()
+        logger.info("Connected to NATS")
 
     async def _get_dataframe(self, pair: str) -> pd.DataFrame:
         raw_data = await fetcher.get_ohlc(pair)
