@@ -1,4 +1,5 @@
-FROM danazkari/python-talib:3.12.5
+ARG TARGETPLATFORM
+FROM --platform=${TARGETPLATFORM:-linux/amd64} danazkari/python-talib:3.12.5
 
 ARG PROJECT_PATH
 
