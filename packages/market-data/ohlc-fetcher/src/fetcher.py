@@ -14,7 +14,7 @@ async def get_ohlc(pair: str) -> List:
     api_data = f"pair={pair}&interval={interval}&since={since}"
     url = f"{base_url}/{api_path}?{api_data}"
     async with httpx.AsyncClient() as client:
-        logger.info("Requesting data...")
+        logger.info(f"Requesting data to {url} ...")
         response = await client.get(url)
         logger.info(f"Got response: {response}")
         raw_data = response.json()
